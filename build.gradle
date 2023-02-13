@@ -1,12 +1,11 @@
+
 buildscript {
     repositories {
         mavenCentral()
-        maven { url "https://plugins.gradle.org/m2/" }
-        mavenLocal()
+        gradlePluginPortal()
     }
     dependencies {
-        classpath 'com.amazonaws:aws-java-sdk-core:1.11.5'
-        classpath "jp.classmethod.aws:gradle-aws-plugin:0.41"
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
     }
 }
 
@@ -14,6 +13,8 @@ plugins {
     id 'java'
     id 'application'
 }
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 group 'org.example'
 version '1.0-SNAPSHOT'
@@ -45,6 +46,17 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes 'Main-Verticle': mainVerticleName
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
 
 
 run {
