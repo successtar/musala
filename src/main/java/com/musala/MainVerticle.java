@@ -41,7 +41,14 @@ public class MainVerticle extends AbstractVerticle {
         });
     }
 
+    /**
+     * Process register Drone request
+     * @param context {@link RoutingContext}
+     */
     private void registerDrone(RoutingContext context) {
+        Drone drone = Json.decodeValue(context.getBody(), Drone.class);
+        drones.put(drone.getSerialNumber(), drone);
+        context.response().setStatusCode(201).end(Json.encodePrettily(drone));
     }
 
     private void loadDrone(RoutingContext context) {
