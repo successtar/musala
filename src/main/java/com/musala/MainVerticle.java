@@ -9,6 +9,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -49,6 +51,27 @@ public class MainVerticle extends AbstractVerticle {
     }
 
     /**
+     * Error Response Handler
+     * @param context {@link RoutingContext}
+     * @param message {@link String}
+     */
+    private void errorResponse(RoutingContext context, String message){
+        errorResponse(context, message, 400);
+    }
+
+    /**
+     * Error Response Handler
+     * @param context {@link RoutingContext}
+     * @param message {@link String}
+     * @param statusCode HTTP Status Code 400|404|500
+     */
+    private void errorResponse(RoutingContext context, String message, int statusCode){
+        context.response().setStatusCode(statusCode)
+                .putHeader("content-type", "application/json; charset=utf-8")
+                .end(Json.encodePrettily(new JsonObject().put("error", message)));
+    }
+
+    /**
      * Process register Drone request
      *
      * @param context {@link RoutingContext}
@@ -63,28 +86,30 @@ public class MainVerticle extends AbstractVerticle {
 
         // Validate input parameters
         if (serialNumber == null || serialNumber.length() > 100) {
-            context.response().setStatusCode(400).end("Serial Number is required and should be 100 characters max");
+            errorResponse(context, "Serial Number is required and should be 100 characters max");
             return;
         }
         if (drones.containsKey(serialNumber)) {
-            context.response().setStatusCode(400).end("Drone already added");
+            errorResponse(context, "Drone already added");
             return;
         }
         if (model == null || !model.matches(" LIGHTWEIGHT|MIDDLEWEIGHT|CRUISERWEIGHT|HEAVYWEIGHT")) {
-            context.response().setStatusCode(400).end("Model is required and should be  LIGHTWEIGHT, MIDDLEWEIGHT, CRUISERWEIGHT, or HEAVYWEIGHT");
+            errorResponse(context, "Model is required and should be  LIGHTWEIGHT, MIDDLEWEIGHT, CRUISERWEIGHT, or HEAVYWEIGHT");
             return;
         }
         if (weightLimit == null || weightLimit > 500) {
-            context.response().setStatusCode(400).end("Weight limit is required and should be 500gr max");
+            errorResponse(context, "Weight limit is required and should be 500gr max");
             return;
         }
         if (batteryCapacity == null || batteryCapacity > 100 || batteryCapacity < 0) {
-            context.response().setStatusCode(400).end("Battery capacity is required and should be a percentage between 0 and 100");
+            errorResponse(context, "Battery capacity is required and should be a percentage between 0 and 100");
             return;
         }
         Drone drone = new Drone(serialNumber, model, weightLimit, batteryCapacity);
         drones.put(drone.getSerialNumber(), drone);
-        context.response().setStatusCode(201).end(Json.encodePrettily(drone.toJson()));
+        context.response().setStatusCode(201)
+                .putHeader("content-type", "application/json; charset=utf-8")
+                .end(Json.encodePrettily(drone.toJson()));
     }
 
     /**
@@ -94,19 +119,19 @@ public class MainVerticle extends AbstractVerticle {
     private void loadDrone(RoutingContext context) {
         String droneId = context.request().getParam("droneId");
         if (!drones.containsKey(droneId)) {
-            context.response().setStatusCode(400).end("Drone with given id not found");
+            errorResponse(context, "Drone with given id not found", 404);
             return;
         }
 
         Drone drone = drones.get(droneId);
 
         if (drone.getState() != Drone.State.IDLE) {
-            context.response().setStatusCode(400).end("Drone is not in IDLE state");
+            errorResponse(context, "Drone is not in IDLE state");
             return;
         }
 
         if (drone.getBatteryCapacity() < 25) {
-            context.response().setStatusCode(400).end("Battery percentage is below 25%");
+            errorResponse(context, "Battery percentage is below 25%");
             return;
         }
 
@@ -117,25 +142,54 @@ public class MainVerticle extends AbstractVerticle {
             for (int i = 0; i < medications.size(); i++) {
                 JsonObject medicationJson = medications.getJsonObject(i);
                 String name = medicationJson.getString("name");
-                double weight = medicationJson.getDouble("weight");
+                if (name == null || name.isEmpty() || !name.matches("[a-zA-Z0-9_-]+")) {
+                    errorResponse(context, "Invalid name for medication");
+                    return;
+                }
+
+                double weight = medicationJson.getDouble("weight", 0d);
+                if (weight <= 0) {
+                    errorResponse(context, "Medication weight should be greater than 0");
+                    return;
+                }
+
                 String code = medicationJson.getString("code");
+                if (code == null || code.isEmpty() || !code.matches("[A-Z0-9_]+")) {
+                    errorResponse(context, "Invalid code for medication");
+                    return;
+                }
+
                 String image = medicationJson.getString("image");
+                if (image == null || image.isEmpty()) {
+                    errorResponse(context, "Medication image is required");
+                    return;
+                }
+                try {
+                    new URL(image);
+                }
+                catch (MalformedURLException e) {
+                    errorResponse(context, "Invalid URL for image");
+                    return;
+                }
                 Medication medication = new Medication(name, weight, code, image);
                 medicationList.add(medication);
                 totalWeight += weight;
             }
 
             if (totalWeight > drone.getWeightLimit()) {
-                context.response().setStatusCode(400).end("Medications weight exceeds the available weight capacity of the drone");
+                errorResponse(context, "Medications weight exceeds the available weight capacity of the drone");
                 return;
             }
 
             drone.setState(Drone.State.LOADING);
             drone.setMedications(medicationList);
-            context.response().setStatusCode(200).end("Drone loaded successfully");
+            context.response().setStatusCode(200)
+                    .putHeader("content-type", "application/json; charset=utf-8")
+                    .end(Json.encodePrettily(new JsonObject().put("message","Drone loaded successfully")));
         }
         catch (Exception e) {
-            context.response().setStatusCode(400).end("Invalid request body");
+            e.printStackTrace();
+            errorResponse(context, "Invalid request body");
         }
     }
 
@@ -152,15 +206,13 @@ public class MainVerticle extends AbstractVerticle {
                 context.response().setStatusCode(200)
                         .putHeader("Content-Type", "application/json")
                         .end(Json.encodePrettily(drone.getLoadedMedications()));
-            } else {
-                context.response().setStatusCode(400)
-                        .putHeader("Content-Type", "text/plain")
-                        .end("Drone is not in LOADED state.");
             }
-        } else {
-            context.response().setStatusCode(400)
-                    .putHeader("Content-Type", "text/plain")
-                    .end("Drone not found with given serial number.");
+            else {
+                errorResponse(context, "Drone is not in LOADED state.");
+            }
+        }
+        else {
+            errorResponse(context, "Drone not found with given serial number.", 404);
         }
     }
 
@@ -202,10 +254,7 @@ public class MainVerticle extends AbstractVerticle {
                     .end(Json.encodePrettily(new JsonObject().put("batteryLevel", drone.getBatteryCapacity())));
         }
         else {
-            context.response()
-                    .setStatusCode(404)
-                    .putHeader("content-type", "application/json; charset=utf-8")
-                    .end(Json.encodePrettily(new JsonObject().put("error", "Drone not found")));
+            errorResponse(context, "Drone not found", 404);
         }
     }
 }
