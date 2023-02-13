@@ -25,7 +25,7 @@ public class MainVerticle extends AbstractVerticle {
         router.post("/api/registerDrone").handler(this::registerDrone);
 
         // API endpoint for loading a drone with medication items
-        router.post("/api/loadDrone").handler(this::loadDrone);
+        router.post("/api/loadDrone/:droneId").handler(this::loadDrone);
 
         // API endpoint for checking loaded medication items for a given drone
         router.get("/api/checkLoadedMedication/:droneId").handler(this::checkLoadedMedication);
@@ -63,7 +63,6 @@ public class MainVerticle extends AbstractVerticle {
      */
     private void loadDrone(RoutingContext context) {
         String droneId = context.request().getParam("droneId");
-
         if (!drones.containsKey(droneId)) {
             context.response().setStatusCode(400).end("Drone with given id not found");
             return;
@@ -139,7 +138,25 @@ public class MainVerticle extends AbstractVerticle {
                 .end(availableDrones.encode());
     }
 
+    /**
+     * Drone Battery Level Check
+     * @param context {@link RoutingContext}
+     */
     private void checkBatteryLevel(RoutingContext context) {
+        String droneId = context.request().getParam("droneId");
+        if (drones.containsKey(droneId)) {
+            Drone drone = drones.get(droneId);
+            context.response()
+                    .setStatusCode(200)
+                    .putHeader("content-type", "application/json; charset=utf-8")
+                    .end(Json.encodePrettily(new JsonObject().put("batteryLevel", drone.getBatteryCapacity())));
+        }
+        else {
+            context.response()
+                    .setStatusCode(404)
+                    .putHeader("content-type", "application/json; charset=utf-8")
+                    .end(Json.encodePrettily(new JsonObject().put("error", "Drone not found")));
+        }
     }
 }
 
