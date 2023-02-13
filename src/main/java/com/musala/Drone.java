@@ -1,5 +1,8 @@
 package com.musala;
 
+
+import io.vertx.core.json.JsonObject;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,25 +77,18 @@ public class Drone {
         this.medications = medications;
     }
 
-    public double getCurrentWeight(){
-        double totalWeight = 0;
-        for (Medication m : medications) {
-            totalWeight += m.getWeight();
-        }
-        return totalWeight;
-    }
 
-    public void loadMedication(Medication medication) {
-        medications.add(medication);
-    }
     public List<Medication> getLoadedMedications() {
         return medications;
     }
 
-    public void checkLoadedMedications() {
-        System.out.println("Loaded medications:");
-        for (Medication medication : medications) {
-            System.out.println("Name: " + medication.getName() + ", Weight: " + medication.getWeight() + ", Code: " + medication.getCode());
-        }
+    public JsonObject toJson() {
+        return new JsonObject()
+                .put("serialNumber", this.serialNumber)
+                .put("model", this.model.toString())
+                .put("state", this.state.toString())
+                .put("weightLimit", this.weightLimit)
+                .put("batteryCapacity", this.batteryCapacity);
     }
+
 }

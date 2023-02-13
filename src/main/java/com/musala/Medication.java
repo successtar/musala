@@ -1,5 +1,7 @@
 package com.musala;
 
+import io.vertx.core.json.JsonObject;
+
 public class Medication {
     private String name;
     private double weight;
@@ -43,6 +45,15 @@ public class Medication {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.put("name", name);
+        json.put("weight", weight);
+        json.put("code", code);
+        json.put("image", image);
+        return json;
     }
 }
 

@@ -7,6 +7,7 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.BodyHandler;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -20,6 +21,7 @@ public class MainVerticle extends AbstractVerticle {
     @Override
     public void start(Promise<Void> startPromise) {
         Router router = Router.router(vertx);
+        router.route().handler(BodyHandler.create());
 
         // API endpoint for registering a drone
         router.post("/api/register-drone").handler(this::registerDrone);
@@ -52,9 +54,37 @@ public class MainVerticle extends AbstractVerticle {
      * @param context {@link RoutingContext}
      */
     private void registerDrone(RoutingContext context) {
-        Drone drone = Json.decodeValue(context.getBody(), Drone.class);
+
+        JsonObject requestBody = context.getBodyAsJson();
+        String serialNumber = requestBody.getString("serialNumber");
+        String model = requestBody.getString("model");
+        Double weightLimit = requestBody.getDouble("weightLimit");
+        Double batteryCapacity = requestBody.getDouble("batteryCapacity");
+
+        // Validate input parameters
+        if (serialNumber == null || serialNumber.length() > 100) {
+            context.response().setStatusCode(400).end("Serial Number is required and should be 100 characters max");
+            return;
+        }
+        if (drones.containsKey(serialNumber)) {
+            context.response().setStatusCode(400).end("Drone already added");
+            return;
+        }
+        if (model == null || !model.matches(" LIGHTWEIGHT|MIDDLEWEIGHT|CRUISERWEIGHT|HEAVYWEIGHT")) {
+            context.response().setStatusCode(400).end("Model is required and should be  LIGHTWEIGHT, MIDDLEWEIGHT, CRUISERWEIGHT, or HEAVYWEIGHT");
+            return;
+        }
+        if (weightLimit == null || weightLimit > 500) {
+            context.response().setStatusCode(400).end("Weight limit is required and should be 500gr max");
+            return;
+        }
+        if (batteryCapacity == null || batteryCapacity > 100 || batteryCapacity < 0) {
+            context.response().setStatusCode(400).end("Battery capacity is required and should be a percentage between 0 and 100");
+            return;
+        }
+        Drone drone = new Drone(serialNumber, model, weightLimit, batteryCapacity);
         drones.put(drone.getSerialNumber(), drone);
-        context.response().setStatusCode(201).end(Json.encodePrettily(drone));
+        context.response().setStatusCode(201).end(Json.encodePrettily(drone.toJson()));
     }
 
     /**
