@@ -110,8 +110,28 @@ public class MainVerticle extends AbstractVerticle {
     }
 
 
-
+    /**
+     * Retrieve Medications Loaded to a Drone
+     * @param context {@link RoutingContext}
+     */
     private void checkLoadedMedication(RoutingContext context) {
+        String droneId = context.request().getParam("droneId");
+        if (drones.containsKey(droneId)) {
+            Drone drone = drones.get(droneId);
+            if (drone.getState() == Drone.State.LOADED) {
+                context.response().setStatusCode(200)
+                        .putHeader("Content-Type", "application/json")
+                        .end(Json.encodePrettily(drone.getLoadedMedications()));
+            } else {
+                context.response().setStatusCode(400)
+                        .putHeader("Content-Type", "text/plain")
+                        .end("Drone is not in LOADED state.");
+            }
+        } else {
+            context.response().setStatusCode(400)
+                    .putHeader("Content-Type", "text/plain")
+                    .end("Drone not found with given serial number.");
+        }
     }
 
     /**

@@ -85,6 +85,9 @@ public class Drone {
     public void loadMedication(Medication medication) {
         medications.add(medication);
     }
+    public List<Medication> getLoadedMedications() {
+        return medications;
+    }
 
     public void checkLoadedMedications() {
         System.out.println("Loaded medications:");
