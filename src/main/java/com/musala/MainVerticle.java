@@ -11,6 +11,7 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class MainVerticle extends AbstractVerticle {
 
@@ -114,7 +115,28 @@ public class MainVerticle extends AbstractVerticle {
     private void checkLoadedMedication(RoutingContext context) {
     }
 
+    /**
+     * Available Drones check
+     * @param context {@link RoutingContext}
+     */
     private void checkAvailableDrones(RoutingContext context) {
+        JsonArray availableDrones = new JsonArray();
+        for (Map.Entry<String, Drone> entry : drones.entrySet()) {
+            Drone drone = entry.getValue();
+            if (drone.getState() == Drone.State.IDLE) {
+                JsonObject droneJson = new JsonObject();
+                droneJson.put("serialNumber", drone.getSerialNumber());
+                droneJson.put("model", drone.getModel().name());
+                droneJson.put("weightLimit", drone.getWeightLimit());
+                droneJson.put("batteryCapacity", drone.getBatteryCapacity());
+                droneJson.put("state", drone.getState().name());
+                availableDrones.add(droneJson);
+            }
+        }
+
+        context.response().setStatusCode(200)
+                .putHeader("Content-Type", "application/json")
+                .end(availableDrones.encode());
     }
 
     private void checkBatteryLevel(RoutingContext context) {
