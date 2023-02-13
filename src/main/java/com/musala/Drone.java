@@ -1,22 +1,29 @@
 package com.musala;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Drone {
     private String serialNumber;
-    private String model;
-    private int weightLimit;
-    private int batteryCapacity;
-    private String state;
+    private Model model;
+    private State state;
+    private double weightLimit;
+    private double batteryCapacity;
     private List<Medication> medications;
+    public enum Model {
+        LIGHTWEIGHT, MIDDLEWEIGHT, CRUISERWEIGHT, HEAVYWEIGHT
+    }
+    public enum State {
+        IDLE, LOADING, LOADED, DELIVERING, DELIVERED, RETURNING
+    }
 
-    public Drone(String serialNumber, String model, int weightLimit, int batteryCapacity, String state, List<Medication> medications) {
+    public Drone(String serialNumber, String model, double weightLimit, double batteryCapacity) {
         this.serialNumber = serialNumber;
-        this.model = model;
+        this.model = Drone.Model.valueOf(model);
         this.weightLimit = weightLimit;
         this.batteryCapacity = batteryCapacity;
-        this.state = state;
-        this.medications = medications;
+        this.state = State.IDLE;
+        this.medications = new ArrayList<Medication>();
     }
 
     public String getSerialNumber() {
@@ -27,15 +34,15 @@ public class Drone {
         this.serialNumber = serialNumber;
     }
 
-    public String getModel() {
-        return model;
+    public Drone.Model getModel() {
+        return this.model;
     }
 
-    public void setModel(String model) {
+    public void setModel(Drone.Model model) {
         this.model = model;
     }
 
-    public int getWeightLimit() {
+    public double getWeightLimit() {
         return weightLimit;
     }
 
@@ -43,7 +50,7 @@ public class Drone {
         this.weightLimit = weightLimit;
     }
 
-    public int getBatteryCapacity() {
+    public double getBatteryCapacity() {
         return batteryCapacity;
     }
 
@@ -51,11 +58,11 @@ public class Drone {
         this.batteryCapacity = batteryCapacity;
     }
 
-    public String getState() {
-        return state;
+    public Drone.State getState() {
+        return this.state;
     }
 
-    public void setState(String state) {
+    public void setState(Drone.State state) {
         this.state = state;
     }
 
@@ -67,16 +74,16 @@ public class Drone {
         this.medications = medications;
     }
 
-    public void loadMedication(Medication medication) {
-        int totalWeight = 0;
+    public double getCurrentWeight(){
+        double totalWeight = 0;
         for (Medication m : medications) {
             totalWeight += m.getWeight();
         }
-        if (totalWeight + medication.getWeight() <= weightLimit) {
-            medications.add(medication);
-        } else {
-            System.out.println("Cannot load medication. Total weight exceeds drone weight limit.");
-        }
+        return totalWeight;
+    }
+
+    public void loadMedication(Medication medication) {
+        medications.add(medication);
     }
 
     public void checkLoadedMedications() {

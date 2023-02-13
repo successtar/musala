@@ -2,11 +2,11 @@ package com.musala;
 
 public class Medication {
     private String name;
-    private int weight;
+    private double weight;
     private String code;
     private String image;
 
-    public Medication(String name, int weight, String code, String image) {
+    public Medication(String name, double weight, String code, String image) {
         this.name = name;
         this.weight = weight;
         this.code = code;
@@ -21,7 +21,7 @@ public class Medication {
         this.name = name;
     }
 
-    public int getWeight() {
+    public double getWeight() {
         return weight;
     }
 
