@@ -9,9 +9,16 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    vertxVersion = "4.2.7"
+}
+
 dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-web:$vertxVersion"
 }
 
 test {
