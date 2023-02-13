@@ -22,19 +22,19 @@ public class MainVerticle extends AbstractVerticle {
         Router router = Router.router(vertx);
 
         // API endpoint for registering a drone
-        router.post("/api/registerDrone").handler(this::registerDrone);
+        router.post("/api/register-drone").handler(this::registerDrone);
 
         // API endpoint for loading a drone with medication items
-        router.post("/api/loadDrone/:droneId").handler(this::loadDrone);
+        router.post("/api/load-drone/:droneId").handler(this::loadDrone);
 
         // API endpoint for checking loaded medication items for a given drone
-        router.get("/api/checkLoadedMedication/:droneId").handler(this::checkLoadedMedication);
+        router.get("/api/check-loaded-medication/:droneId").handler(this::checkLoadedMedication);
 
         // API endpoint for checking available drones for loading
-        router.get("/api/checkAvailableDrones").handler(this::checkAvailableDrones);
+        router.get("/api/check-available-drones").handler(this::checkAvailableDrones);
 
         // API endpoint for checking drone battery level for a given drone
-        router.get("/api/checkBatteryLevel/:droneId").handler(this::checkBatteryLevel);
+        router.get("/api/check-battery-level/:droneId").handler(this::checkBatteryLevel);
 
         vertx.createHttpServer().requestHandler(router).listen(8888, http -> {
             if (http.succeeded()) {
