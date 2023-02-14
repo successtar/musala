@@ -1,6 +1,20 @@
+
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath "gradle.plugin.com.github.johnrengelman:shadow:7.1.2"
+    }
+}
+
 plugins {
     id 'java'
+    id 'application'
 }
+apply plugin: 'java'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 group 'org.example'
 version '1.0-SNAPSHOT'
@@ -9,11 +23,42 @@ repositories {
     mavenCentral()
 }
 
+ext {
+    vertxVersion = "4.2.7"
+}
+
+application {
+    mainClassName = 'io.vertx.core.Launcher'
+}
+
+def mainVerticleName = 'com.musala.MainVerticle'
+def watchForChange = 'src/**/*'
+def doOnChange = './gradlew classes'
+
 dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+    implementation "io.vertx:vertx-core:$vertxVersion"
+    implementation "io.vertx:vertx-web:$vertxVersion"
 }
 
 test {
     useJUnitPlatform()
+}
+
+shadowJar {
+    classifier = 'fat'
+    manifest {
+        attributes 'Main-Verticle': mainVerticleName
+    }
+    mergeServiceFiles {
+        include 'META-INF/services/io.vertx.core.spi.VerticleFactory'
+    }
+}
+
+
+
+run {
+    args = ['run', mainVerticleName, "--redeploy=$watchForChange", "--launcher-class=$mainClassName", "--on-redeploy=$doOnChange"]
 }
