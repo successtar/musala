@@ -1,5 +1,32 @@
 ## Drones
 
+# Build Jar
+` ./gradlew shadowJar
+`
+
+# Run App
+` java -jar build/libs/musala-1.0-SNAPSHOT-fat.jar
+`
+
+App Start on port 8888
+
+# End Points
+API endpoint for registering a drone <br/>
+Post: http://locahost:8888/api/register-drone
+
+API endpoint for loading a drone with medication items <br/>
+Post: http://locahost:8888/api/load-drone/:droneId
+
+API endpoint for checking loaded medication items for a given drone <br/>
+Get: http://locahost:8888/api/check-loaded-medication/:droneId
+
+API endpoint for checking available drones for loading <br/>
+Get: http://locahost:8888/api/check-available-drones
+
+API endpoint for checking drone battery level for a given drone <br/>
+Get: http://locahost:8888/api/check-battery-level/:droneId
+
+
 [[_TOC_]]
 
 ---
